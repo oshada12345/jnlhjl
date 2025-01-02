@@ -1,128 +1,39 @@
 const axios = require('axios');
+const { cmd } = require("../command");
 const { reply } = require("../lib/functions");
 const fs = require('fs');
 const path = require('path');
-const stream = require('stream');
 const { pipeline } = require('stream/promises');
-const config = require("../config");
-const { cmd, commands } = require("../command");
-const {
-    getBuffer,
-    getGroupAdmins,
-    getRandom,
-    h2k,
-    isUrl,
-    Json,
-    runtime,
-    sleep,
-    fetchJson,
-} = require("../lib/functions");
 
+// Function to fetch the file as a stream with retry logic
+const fetchFileStreamWithRetry = async (url, retries = 6) => {
+    let attempt = 0;
+    let fileStream;
+    while (attempt < retries) {
+        try {
+            const response = await axios.get(url, {
+                responseType: 'stream',
+            });
 
-// Function to download the file as a stream
-const fetchFileStream = async (url) => {
-    try {
-        const response = await axios.get(url, {
-            responseType: 'stream', // Use stream response
-        });
+            if (!response || !response.data) {
+                throw new Error('No data received from URL');
+            }
 
-        if (!response.data) {
-            throw new Error('File data is undefined');
+            fileStream = response.data;
+            break; // Exit loop if download is successful
+        } catch (error) {
+            attempt++;
+            console.error(`Error on attempt ${attempt}:`, error.message);
+            if (attempt >= retries) {
+                throw new Error('Max retry attempts reached');
+            }
+            // Wait before retrying (optional delay, e.g., 2 seconds)
+            await new Promise(resolve => setTimeout(resolve, 2000));
         }
-
-        return response.data; // Return stream
-    } catch (error) {
-        console.error("Error fetching the file:", error.message);
-        throw error; // Propagate error to be handled further
     }
+
+    return fileStream;
 };
-
-
-cmd(
-    {
-        pattern: "movie",
-        alias: ["movi", "tests"],
-        use: ".movie <query>",
-        react: "🔎",
-        desc: "Moive downloader",
-        category: "movie",
-        filename: __filename,
-    },
-
-    async (conn, mek, m, { from, quoted, args, q, reply }) => {
-        try {
-            let sadas = await fetchJson(
-                `https://www.dark-yasiya-api.site/movie/sinhalasub/search?text=${q}`,
-            );
-            const msg = `*🎥 MOVIE SEARCH 🎥*`;
-
-            if (sadas.data.length < 1)
-                return await conn.sendMessage(
-                    from,
-                    { text: "🚩 *I couldn't find anything :(*" },
-                    { quoted: mek },
-                );
-
-            let text = `${msg}\n\n`;
-            sadas.data.forEach((v, index) => {
-                text += `${index + 1}. ${v.Title}\nLink: ${v.Link}\n\n`;
-            });
-
-            await conn.sendMessage(from, { text }, { quoted: mek });
-        } catch (e) {
-            console.log(e);
-            await conn.sendMessage(
-                from,
-                { text: "🚩 *Error !!*" },
-                { quoted: mek },
-            );
-        }
-    },
-);
-
-cmd(
-    {
-        pattern: "infodl",
-        alias: ["mdv"],
-        use: ".moviedl <url>",
-        react: "🎥",
-        desc: "download movies from sinhalasub.lk",
-        filename: __filename,
-    },
-
-    async (conn, mek, m, { from, q, reply }) => {
-        try {
-            if (!q) return reply("🚩 *Please give me a url*");
-
-            let sadas = await fetchJson(
-                `https://www.dark-yasiya-api.site/movie/sinhalasub/movie?url=${q}`,
-            );
-
-            if (!sadas || sadas.length < 1)
-                return await conn.sendMessage(
-                    from,
-                    { text: "🚩 *I couldn't find anything :(*" },
-                    { quoted: mek },
-                );
-
-            let text = `🎥  MOVIE DOWNLOADER 🎥\n\n*Title:* ${sadas.title}\n*Release:* ${sadas.date}\n*Rating:* ${sadas.rating}\n*Runtime:* ${sadas.duration}\n*Director:* ${sadas.author}\n*Country:* ${sadas.country}\n\nDownload Links:\n`;
-
-            sadas.downloadLinks.forEach((v) => {
-                text += `- ${v.quality} (${v.size}): ${v.link}\n`;
-            });
-
-            await conn.sendMessage(from, { text }, { quoted: mek });
-        } catch (e) {
-            console.log(e);
-            await conn.sendMessage(
-                from,
-                { text: "🚩 *Error !!*" },
-                { quoted: mek },
-            );
-        }
-    },
-);
-
 
 cmd(
     {
@@ -143,8 +54,8 @@ cmd(
         }
 
         try {
-            // Fetch file stream
-            const fileStream = await fetchFileStream(mediaUrl);
+            // Fetch the file stream with retry logic
+            const fileStream = await fetchFileStreamWithRetry(mediaUrl);
 
             // Determine file extension
             const fileExtension = path.extname(mediaUrl) || ".file";
