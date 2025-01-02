@@ -4,7 +4,7 @@
   "description": "A WhatsApp bot created using Node.js",
   "main": "index.js",
   "scripts": {
-    "start": "start index.js"
+    "start": "node index.js"
   },
   "dependencies": {
     "@adiwajshing/keyed-db": "^0.2.4",
