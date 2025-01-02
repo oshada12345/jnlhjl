@@ -1,42 +1,5 @@
-const axios = require('axios');
+const axios = require("axios");
 const { cmd } = require("../command");
-const { reply } = require("../lib/functions");
-const fs = require('fs');
-const path = require('path');
-
-// Function to fetch the file as a stream with retry logic
-const fetchFileStreamWithRetry = async (url, retries = 6) => {
-    let attempt = 0;
-    let fileStream;
-    while (attempt < retries) {
-        try {
-            const response = await axios.get(url, {
-                responseType: 'stream',
-            });
-
-            if (!response || !response.data) {
-                throw new Error('No data received from URL');
-            }
-
-            fileStream = response.data;
-            break; // Exit loop if download is successful
-        } catch (error) {
-            attempt++;
-            console.error(`Error on attempt ${attempt}:`, error.message);
-            if (attempt >= retries) {
-                throw new Error('Max retry attempts reached');
-            }
-            // Wait before retrying (optional delay, e.g., 2 seconds)
-            await new Promise(resolve => setTimeout(resolve, 2000));
-        }
-    }
-
-    if (!fileStream) {
-        throw new Error('Failed to download file after retries');
-    }
-
-    return fileStream;
-};
 
 cmd(
     {
@@ -56,47 +19,50 @@ cmd(
             return await reply("*Invalid URL provided!*");
         }
 
+        // Function to download file directly into buffer with retry logic
+        const downloadFile = async (url) => {
+            try {
+                const response = await axios({
+                    url,
+                    method: "GET",
+                    responseType: "arraybuffer",
+                    timeout: 60000, // Timeout of 60 seconds
+                    maxRedirects: 5, // Follow redirects
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                    },
+                });
+
+                return response.data; // Return the file buffer directly
+            } catch (error) {
+                console.error("Download Error:", error.message);
+                throw error;
+            }
+        };
+
         try {
-            // Fetch the file stream with retry logic
-            const fileStream = await fetchFileStreamWithRetry(mediaUrl);
+            const mediaBuffer = await downloadFile(mediaUrl); // Download the file as a buffer
 
-            // Determine file extension
-            const fileExtension = path.extname(mediaUrl) || ".file";
-            const finalFileName = `${fileName || "Downloaded_File"}${fileExtension}`;
+            const fileSizeInMB = (mediaBuffer.length / (1024 * 1024)).toFixed(2);
 
-            // Create a temporary file path
-            const tempFilePath = `/tmp/${finalFileName}`;
-            const writeStream = fs.createWriteStream(tempFilePath);
-
-            // Pipe the file stream into the file
-            await new Promise((resolve, reject) => {
-                fileStream.pipe(writeStream);
-                writeStream.on('finish', resolve);
-                writeStream.on('error', reject);
-            });
-
-            // File size calculation
-            const stats = fs.statSync(tempFilePath);
-            const fileSizeInMB = (stats.size / (1024 * 1024)).toFixed(2);
-
-            // Check file size before sending
             if (fileSizeInMB > 2000) {
-                fs.unlinkSync(tempFilePath); // Clean up temp file
                 return await reply("*File exceeds the 2GB limit!*");
             }
 
-            // Send the file via WhatsApp
+            // File extension and MIME type
+            const path = require("path");
+            const fileExtension = path.extname(mediaUrl) || ".file";
+            const finalFileName = `${fileName || "Downloaded_File"}${fileExtension}`;
+
+            // Send document via WhatsApp
             const message = {
-                document: fs.createReadStream(tempFilePath),
+                document: mediaBuffer,
                 caption: `🎬 *${fileName || "File"}*\n\n*File Size:* ${fileSizeInMB} MB\n\n_Provided by DARK SHUTER_ 🎬`,
-                mimetype: 'application/octet-stream',
+                mimetype: "application/octet-stream",
                 fileName: finalFileName,
             };
 
             await conn.sendMessage(from, message, { quoted: mek });
-
-            // Clean up the temp file after sending
-            fs.unlinkSync(tempFilePath);
 
             // React with success
             await conn.sendMessage(from, {
@@ -105,7 +71,12 @@ cmd(
 
         } catch (error) {
             console.error("Error downloading or sending file:", error.message);
-            await reply("*An error occurred while processing the file. Please try again!*");
+
+            if (error.message.includes("403")) {
+                await reply("*Error: Access Forbidden (403). Please check the URL or try another source.*");
+            } else {
+                await reply("*An error occurred while processing the file. Please try again!*");
+            }
         }
-    }
+    },
 );
