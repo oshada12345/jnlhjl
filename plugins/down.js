@@ -21,29 +21,39 @@ cmd(
             return await reply("*Invalid URL provided!*");
         }
 
+        // Define tempFilePath globally within the try block to ensure it exists
+        let tempFilePath;
+
         // Function to download file with streaming
         const downloadFile = async (url, outputPath) => {
             const writer = fs.createWriteStream(outputPath);
 
-            const response = await axios({
-                url,
-                method: "GET",
-                responseType: "stream",
-                timeout: 60000, // Timeout of 60 seconds
-            });
+            try {
+                const response = await axios({
+                    url,
+                    method: "GET",
+                    responseType: "stream",
+                    timeout: 60000, // Timeout of 60 seconds
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                    },
+                });
 
-            response.data.pipe(writer);
+                response.data.pipe(writer);
 
-            return new Promise((resolve, reject) => {
-                writer.on("finish", resolve);
-                writer.on("error", reject);
-            });
+                return new Promise((resolve, reject) => {
+                    writer.on("finish", resolve);
+                    writer.on("error", reject);
+                });
+            } catch (error) {
+                console.error("Download Error:", error.message);
+                throw error; // Propagate error
+            }
         };
 
         try {
             // Define file paths
-            const tempFileName = `temp_${Date.now()}`;
-            const tempFilePath = path.join(__dirname, tempFileName);
+            tempFilePath = path.join(__dirname, `temp_${Date.now()}`);
             const finalFileName = `${fileName || "Downloaded_File"}${path.extname(mediaUrl) || ".file"}`;
 
             // Download file with streaming
@@ -82,11 +92,15 @@ cmd(
             console.error("Error downloading or sending file:", error.message);
 
             // Cleanup temporary file if it exists
-            if (fs.existsSync(tempFilePath)) {
+            if (tempFilePath && fs.existsSync(tempFilePath)) {
                 fs.unlinkSync(tempFilePath);
             }
 
-            await reply("*An error occurred while processing the file. Please try again!*");
+            if (error.response && error.response.status === 403) {
+                await reply("*Error: Access Forbidden (403). Please check the URL or try another source.*");
+            } else {
+                await reply("*An error occurred while processing the file. Please try again!*");
+            }
         }
     },
 );
