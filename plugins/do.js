@@ -6,7 +6,7 @@ const fs = require('fs');
 
 // Command to search for a movie or TV show
 cmd({
-    pattern: "movie",
+    pattern: "movie1",
     desc: "Search for a movie",
     category: "movie",
     react: "🔍",
