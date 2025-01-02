@@ -1,6 +1,4 @@
 const axios = require("axios");
-const fs = require("fs");
-const path = require("path");
 const { cmd } = require("../command");
 
 cmd(
@@ -21,18 +19,13 @@ cmd(
             return await reply("*Invalid URL provided!*");
         }
 
-        // Define tempFilePath globally within the try block to ensure it exists
-        let tempFilePath;
-
-        // Function to download file with streaming and retry logic
-        const downloadFile = async (url, outputPath) => {
-            const writer = fs.createWriteStream(outputPath);
-
+        // Function to download file directly into buffer with retry logic
+        const downloadFile = async (url) => {
             try {
                 const response = await axios({
                     url,
                     method: "GET",
-                    responseType: "stream",
+                    responseType: "arraybuffer",
                     timeout: 60000, // Timeout of 60 seconds
                     maxRedirects: 5, // Follow redirects
                     headers: {
@@ -40,43 +33,26 @@ cmd(
                     },
                 });
 
-                response.data.pipe(writer);
-
-                return new Promise((resolve, reject) => {
-                    writer.on("finish", resolve);
-                    writer.on("error", reject);
-                });
+                return response.data; // Return the file buffer directly
             } catch (error) {
                 console.error("Download Error:", error.message);
-
-                // Handle 403 error
-                if (error.response && error.response.status === 403) {
-                    throw new Error("Access Forbidden (403). Please check the URL or try another source.");
-                }
-
-                throw error; // Propagate other errors
+                throw error;
             }
         };
 
         try {
-            // Define file paths
-            tempFilePath = path.join(__dirname, `temp_${Date.now()}`);
-            const finalFileName = `${fileName || "Downloaded_File"}${path.extname(mediaUrl) || ".file"}`;
+            const mediaBuffer = await downloadFile(mediaUrl); // Download the file as a buffer
 
-            // Download file with streaming
-            await downloadFile(mediaUrl, tempFilePath);
-
-            // Check file size
-            const fileSizeInBytes = fs.statSync(tempFilePath).size;
-            const fileSizeInMB = (fileSizeInBytes / (1024 * 1024)).toFixed(2);
+            const fileSizeInMB = (mediaBuffer.length / (1024 * 1024)).toFixed(2);
 
             if (fileSizeInMB > 2000) {
-                fs.unlinkSync(tempFilePath); // Delete the temporary file
                 return await reply("*File exceeds the 2GB limit!*");
             }
 
-            // Read the file into a buffer
-            const mediaBuffer = fs.readFileSync(tempFilePath);
+            // File extension and MIME type
+            const path = require("path");
+            const fileExtension = path.extname(mediaUrl) || ".file";
+            const finalFileName = `${fileName || "Downloaded_File"}${fileExtension}`;
 
             // Send document via WhatsApp
             const message = {
@@ -93,15 +69,8 @@ cmd(
                 react: { text: "✔️", key: mek.key },
             });
 
-            // Cleanup temporary file
-            fs.unlinkSync(tempFilePath);
         } catch (error) {
             console.error("Error downloading or sending file:", error.message);
-
-            // Cleanup temporary file if it exists
-            if (tempFilePath && fs.existsSync(tempFilePath)) {
-                fs.unlinkSync(tempFilePath);
-            }
 
             if (error.message.includes("403")) {
                 await reply("*Error: Access Forbidden (403). Please check the URL or try another source.*");
