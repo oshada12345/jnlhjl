@@ -1,9 +1,7 @@
 const axios = require("axios");
-const config = require("../config");
-const { cmd, commands } = require("../command");
-const {
-    fetchJson,
-} = require("../lib/functions");
+const fs = require("fs");
+const path = require("path");
+const { cmd } = require("../command");
 
 cmd(
     {
@@ -23,43 +21,51 @@ cmd(
             return await reply("*Invalid URL provided!*");
         }
 
-        // Retry logic for downloading file
-        const fetchFile = async (url) => {
-            try {
-                const response = await axios.get(url, {
-                    responseType: "arraybuffer",
-                    timeout: 60000, // Retry after timeout
-                });
-                return response;
-            } catch (error) {
-                if (error.code === "ECONNABORTED") {
-                    console.log("Retrying download...");
-                    return fetchFile(url); // Retry download
-                }
-                throw error;
-            }
+        // Function to download file with streaming
+        const downloadFile = async (url, outputPath) => {
+            const writer = fs.createWriteStream(outputPath);
+
+            const response = await axios({
+                url,
+                method: "GET",
+                responseType: "stream",
+                timeout: 60000, // Timeout of 60 seconds
+            });
+
+            response.data.pipe(writer);
+
+            return new Promise((resolve, reject) => {
+                writer.on("finish", resolve);
+                writer.on("error", reject);
+            });
         };
 
         try {
-            const response = await fetchFile(mediaUrl); // Download file
-            const mediaBuffer = Buffer.from(response.data, "binary");
-            const fileSizeInMB = (mediaBuffer.length / (1024 * 1024)).toFixed(2);
+            // Define file paths
+            const tempFileName = `temp_${Date.now()}`;
+            const tempFilePath = path.join(__dirname, tempFileName);
+            const finalFileName = `${fileName || "Downloaded_File"}${path.extname(mediaUrl) || ".file"}`;
 
-            // File extension and MIME type
-            const path = require("path");
-            const fileExtension = path.extname(mediaUrl) || ".file";
-            const finalFileName = `${fileName || "Downloaded_File"}${fileExtension}`;
-            const mimeType = response.headers["content-type"] || "application/octet-stream";
+            // Download file with streaming
+            await downloadFile(mediaUrl, tempFilePath);
+
+            // Check file size
+            const fileSizeInBytes = fs.statSync(tempFilePath).size;
+            const fileSizeInMB = (fileSizeInBytes / (1024 * 1024)).toFixed(2);
 
             if (fileSizeInMB > 2000) {
+                fs.unlinkSync(tempFilePath); // Delete the temporary file
                 return await reply("*File exceeds the 2GB limit!*");
             }
+
+            // Read the file into a buffer
+            const mediaBuffer = fs.readFileSync(tempFilePath);
 
             // Send document via WhatsApp
             const message = {
                 document: mediaBuffer,
                 caption: `🎬 *${fileName || "File"}*\n\n*File Size:* ${fileSizeInMB} MB\n\n_Provided by DARK SHUTER_ 🎬`,
-                mimetype: mimeType,
+                mimetype: "application/octet-stream",
                 fileName: finalFileName,
             };
 
@@ -69,8 +75,17 @@ cmd(
             await conn.sendMessage(from, {
                 react: { text: "✔️", key: mek.key },
             });
+
+            // Cleanup temporary file
+            fs.unlinkSync(tempFilePath);
         } catch (error) {
-            console.error("Error:", error.message);
+            console.error("Error downloading or sending file:", error.message);
+
+            // Cleanup temporary file if it exists
+            if (fs.existsSync(tempFilePath)) {
+                fs.unlinkSync(tempFilePath);
+            }
+
             await reply("*An error occurred while processing the file. Please try again!*");
         }
     },
