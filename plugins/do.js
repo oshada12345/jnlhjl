@@ -1,7 +1,4 @@
-//PRABATH YT BASE SUPPORT ❤️‍🔥
-
-// 𝙿𝙾𝚆𝙴𝚁𝙳  𝙱𝚈  𓄂𝐎ᴡͥɳͣᴇͫᴙ  𝐂ʏ͢ʙᴇʀ  𝚇 Aʏ͢ᴇꜱʜ
-
+//THIS PLUGIN BY Darksadas YT
 const config = require('../config')
 const { cmd, commands } = require('../command')
 const { getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson} = require('../lib/functions')
@@ -212,7 +209,7 @@ cmd({
      
  *Darksadas YT*`,
             mimetype: "video/mp4",
-            fileName: `${datas}🎬PODDA-X-MD🎬.mp4`,
+            fileName: `${datas}🎬DARK SHUTER🎬.mp4`,
         };
 
         await conn.sendMessage(config.JID, message);
@@ -223,11 +220,3 @@ cmd({
         await conn.sendMessage(from, '*Error fetching or sending *', { quoted: mek });
     }
 });
-
-        
-
-
-`JOIN AND SHARE 🔥`
-
-
-
