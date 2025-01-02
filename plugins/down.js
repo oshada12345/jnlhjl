@@ -25,13 +25,15 @@ const fetchFileStream = async (url) => {
         const response = await axios.get(url, {
             responseType: 'stream', // Use stream response
         });
+
+        if (!response.data) {
+            throw new Error('File data is undefined');
+        }
+
         return response.data; // Return stream
     } catch (error) {
-        if (error.code === "ECONNABORTED") {
-            console.log("Retrying download...");
-            return fetchFileStream(url); // Retry on timeout
-        }
-        throw error;
+        console.error("Error fetching the file:", error.message);
+        throw error; // Propagate error to be handled further
     }
 };
 
