@@ -1,5 +1,4 @@
 const axios = require('axios');
-const { cmd } = require("../command");
 const { reply } = require("../lib/functions");
 const fs = require('fs');
 const path = require('path');
