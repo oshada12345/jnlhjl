@@ -224,11 +224,10 @@ cmd({
     }
 });
 
-https://whatsapp.com/channel/0029VaiTjMlK5cDLek3bB533
-          
+        
 
 
 `JOIN AND SHARE 🔥`
 
 
-> credit by සදස් yt❤️‍🔥
+
