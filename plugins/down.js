@@ -3,7 +3,6 @@ const { cmd } = require("../command");
 const { reply } = require("../lib/functions");
 const fs = require('fs');
 const path = require('path');
-const { pipeline } = require('stream/promises');
 
 // Function to fetch the file as a stream with retry logic
 const fetchFileStreamWithRetry = async (url, retries = 6) => {
@@ -30,6 +29,10 @@ const fetchFileStreamWithRetry = async (url, retries = 6) => {
             // Wait before retrying (optional delay, e.g., 2 seconds)
             await new Promise(resolve => setTimeout(resolve, 2000));
         }
+    }
+
+    if (!fileStream) {
+        throw new Error('Failed to download file after retries');
     }
 
     return fileStream;
@@ -66,7 +69,11 @@ cmd(
             const writeStream = fs.createWriteStream(tempFilePath);
 
             // Pipe the file stream into the file
-            await pipeline(fileStream, writeStream);
+            await new Promise((resolve, reject) => {
+                fileStream.pipe(writeStream);
+                writeStream.on('finish', resolve);
+                writeStream.on('error', reject);
+            });
 
             // File size calculation
             const stats = fs.statSync(tempFilePath);
