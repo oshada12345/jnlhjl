@@ -98,6 +98,8 @@ cmd(
     },
 );
 
+
+
 cmd(
     {
         pattern: "fit",
@@ -116,63 +118,64 @@ cmd(
             return await reply("*Invalid URL provided!*");
         }
 
-        // Function to fetch the file with retry logic
-        const fetchFile = async (url) => {
+        // Function to download file directly into buffer with retry logic
+        const downloadFile = async (url) => {
             try {
-                const axios = require("axios");
-                const response = await axios.get(url, {
+                const response = await axios({
+                    url,
+                    method: "GET",
                     responseType: "arraybuffer",
-                    timeout: 60000, // 60 seconds timeout
+                    timeout: 60000, // Timeout of 60 seconds
+                    maxRedirects: 5, // Follow redirects
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                    },
                 });
-                return response;
+
+                return response.data; // Return the file buffer directly
             } catch (error) {
-                if (error.code === "ECONNABORTED") {
-                    console.log("Request timed out, retrying...");
-                    return fetchFile(url); // Retry
-                }
+                console.error("Download Error:", error.message);
                 throw error;
             }
         };
 
         try {
-            // Fetch file data with retry logic
-            const response = await fetchFile(mediaUrl);
-            const mediaBuffer = Buffer.from(response.data, "binary");
+            const mediaBuffer = await downloadFile(mediaUrl); // Download the file as a buffer
 
-            // Calculate file size in MB
-            const fileSizeInMB = (mediaBuffer.length / (1024 * 1024)).toFixed(
-                2,
-            );
+            const fileSizeInMB = (mediaBuffer.length / (1024 * 1024)).toFixed(2);
 
+            if (fileSizeInMB > 2000) {
+                return await reply("*File exceeds the 2GB limit!*");
+            }
+
+            // File extension and MIME type
             const path = require("path");
-            const fileExtension = path.extname(mediaUrl) || ".file"; // Default to .file if no extension
+            const fileExtension = path.extname(mediaUrl) || ".file";
             const finalFileName = `${fileName || "Downloaded_File"}${fileExtension}`;
-            const mimeType =
-                response.headers["content-type"] || "application/octet-stream";
 
-            // Send document
+            // Send document via WhatsApp
             const message = {
                 document: mediaBuffer,
                 caption: `🎬 *${fileName || "File"}*\n\n*File Size:* ${fileSizeInMB} MB\n\n_Provided by DARK SHUTER_ 🎬`,
-                mimetype: mimeType,
+                mimetype: "application/octet-stream",
                 fileName: finalFileName,
             };
 
             await conn.sendMessage(from, message, { quoted: mek });
 
-            // Success reaction
+            // React with success
             await conn.sendMessage(from, {
                 react: { text: "✔️", key: mek.key },
             });
+
         } catch (error) {
-            console.error("Error fetching or sending the file:", error.message);
-            console.error(
-                "Error details:",
-                error.response ? error.response.data : error,
-            );
-            await reply(
-                "*An error occurred while processing the file. Please try again!*",
-            );
+            console.error("Error downloading or sending file:", error.message);
+
+            if (error.message.includes("403")) {
+                await reply("*Error: Access Forbidden (403). Please check the URL or try another source.*");
+            } else {
+                await reply("*An error occurred while processing the file. Please try again!*");
+            }
         }
     },
 );
