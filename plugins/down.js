@@ -24,7 +24,7 @@ cmd(
         // Define tempFilePath globally within the try block to ensure it exists
         let tempFilePath;
 
-        // Function to download file with streaming
+        // Function to download file with streaming and retry logic
         const downloadFile = async (url, outputPath) => {
             const writer = fs.createWriteStream(outputPath);
 
@@ -34,6 +34,7 @@ cmd(
                     method: "GET",
                     responseType: "stream",
                     timeout: 60000, // Timeout of 60 seconds
+                    maxRedirects: 5, // Follow redirects
                     headers: {
                         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
                     },
@@ -47,7 +48,13 @@ cmd(
                 });
             } catch (error) {
                 console.error("Download Error:", error.message);
-                throw error; // Propagate error
+
+                // Handle 403 error
+                if (error.response && error.response.status === 403) {
+                    throw new Error("Access Forbidden (403). Please check the URL or try another source.");
+                }
+
+                throw error; // Propagate other errors
             }
         };
 
@@ -96,7 +103,7 @@ cmd(
                 fs.unlinkSync(tempFilePath);
             }
 
-            if (error.response && error.response.status === 403) {
+            if (error.message.includes("403")) {
                 await reply("*Error: Access Forbidden (403). Please check the URL or try another source.*");
             } else {
                 await reply("*An error occurred while processing the file. Please try again!*");
