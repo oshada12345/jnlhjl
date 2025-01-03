@@ -43,7 +43,7 @@ async (conn, mek, m, { from, l, quoted, body, isCmd, umarmd, args, q, isGroup, s
 ┏━━━━━━━━━━━━━━━
 *📥 DOWNLOADER-CMD 📥*
 ┡────────────────
-*🧩 Search Cmd:* `.search`
+*🧩 Search Cmd:* .search
 *💾 File Downloader:* download URL
 *🎥 Movie Download:* movie  MovieName
 └────────────────
