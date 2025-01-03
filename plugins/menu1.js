@@ -33,8 +33,8 @@ async (conn, mek, m, { from, l, quoted, body, isCmd, umarmd, args, q, isGroup, s
 *❖│▸* *ᴄʀᴇᴀᴛᴏʀ* : **Silent Lover**
 *❖│▸* *ᴠᴇʀsɪᴏɴs* : *ᴠ.2.0.0*
 *❖│▸* *ᴍᴇɴᴜ ᴄᴍᴅ* : *ᴍᴇɴᴜ ʟɪsᴛ*
-*❖│▸* *ꜱᴜʙꜱᴄʀɪʙᴇ ᴍʏ ʏᴛ ᴄʜᴀɴɴᴇʟ* : *https://youtube.com/@silentlover432*
-*❖│▸* *ᴊᴏɪɴ ᴍʏ ᴄʜᴀɴɴᴇʟ* : *https://whatsapp.com/channel/0029VaHO5B0G3R3cWkZN970s*
+*❖│▸* *ꜱᴜʙꜱᴄʀɪʙᴇ ᴍʏ ʏᴛ ᴄʜᴀɴɴᴇʟ* : **
+*❖│▸* *ᴊᴏɪɴ ᴍʏ ᴄʜᴀɴɴᴇʟ* : 
 *┬│▸*
 *│╰────────────···▸▸*
 *└──────────────···▸*
@@ -44,23 +44,23 @@ async (conn, mek, m, { from, l, quoted, body, isCmd, umarmd, args, q, isGroup, s
 *📥 DOWNLOADER-CMD 📥*
 ┡────────────────
 *🧩 Search Cmd:* `.search`
-*💾 File Downloader:* `.download [URL]`
-*🎥 Movie Download:* `.movie [MovieName]`
+*💾 File Downloader:* `download URL'
+*🎥 Movie Download:* `movie  MovieName`
 └────────────────
 
 ┏━━━━━━━━━━━━━━━
 *🔎 SEARCH-CMD 🔍*
 ┡────────────────
-*📚 Search Info:* `.search [term]`
-*🖼️ Image Search:* `.image [query]`
-*🎬 Video Search:* `.video [query]`
+*📚 Search Info:* `search [term]`
+*🖼️ Image Search:* `image [query]`
+*🎬 Video Search:* `video [query]`
 └────────────────
 
 ┏━━━━━━━━━━━━━━━
 *🧠 AI-CMD 🧠*
 ┡────────────────
-*🤖 Chat with AI:* `.chat`
-*💡 Ask AI Anything:* `.ask [question]`
+*🤖 Chat with AI:* `chat`
+*💡 Ask AI Anything:* `ask [question]`
 └────────────────
 
 ┏━━━━━━━━━━━━━━━
