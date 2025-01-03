@@ -157,11 +157,10 @@ cmd(
                     timeout: 60000,
                     maxRedirects: 5,
                     headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                        'User-Agent': 'Mozilla/5.0',
                     },
                 });
-
-                return response.data; // Return the file buffer
+                return response.data; // File buffer
             } catch (error) {
                 console.error("Download Error:", error.message);
                 throw error;
@@ -170,26 +169,33 @@ cmd(
 
         try {
             const mediaBuffer = await downloadFile(mediaUrl);
-
             const fileSizeInMB = (mediaBuffer.length / (1024 * 1024)).toFixed(2);
+
             if (fileSizeInMB > 2000) {
                 return await reply("*File exceeds the 2GB limit!*");
             }
 
-            // Determine file extension from the URL
-            const path = require("path");
-            const urlExtension = path.extname(mediaUrl);
-            const fileExtension = urlExtension || ".file";
+            // Detect file type and extension
+            const FileType = require("file-type");
+            const fileType = await FileType.fromBuffer(mediaBuffer);
+            const detectedExtension = fileType?.ext || "bin";
+            const detectedMimeType = fileType?.mime || "application/octet-stream";
 
             // Build the final filename
-            const finalFileName = `${fileName || "Downloaded_File"}${fileExtension}`;
+            const finalFileName = `${fileName || "Downloaded_File"}.${detectedExtension}`;
 
             const message = {
-                document: mediaBuffer,
-                caption: `🎬 *${fileName || "File"}*\n\n*File Size:* ${fileSizeInMB} MB\n\n_Provided by DARK SHUTER_ 🎬`,
-                mimetype: "application/octet-stream",
+                mimetype: detectedMimeType,
                 fileName: finalFileName,
+                caption: `🎬 *${fileName || "File"}*\n\n*File Size:* ${fileSizeInMB} MB\n\n_Provided by DARK SHUTER_ 🎬`,
             };
+
+            // Decide whether to send as a document or video
+            if (detectedMimeType.startsWith("video/")) {
+                message.video = mediaBuffer; // Send as video
+            } else {
+                message.document = mediaBuffer; // Send as document
+            }
 
             // Send the file
             await conn.sendMessage(from, message, { quoted: mek });
@@ -198,7 +204,6 @@ cmd(
             await conn.sendMessage(from, {
                 react: { text: "✔️", key: mek.key },
             });
-
         } catch (error) {
             console.error("Error downloading or sending file:", error.message);
 
@@ -210,6 +215,7 @@ cmd(
         }
     }
 );
+
 
 cmd(
     {
