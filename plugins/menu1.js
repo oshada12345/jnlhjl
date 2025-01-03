@@ -44,44 +44,44 @@ async (conn, mek, m, { from, l, quoted, body, isCmd, umarmd, args, q, isGroup, s
 *📥 DOWNLOADER-CMD 📥*
 ┡────────────────
 *🧩 Search Cmd:* `.search`
-*💾 File Downloader:* `download URL'
-*🎥 Movie Download:* `movie  MovieName`
+*💾 File Downloader:* download URL
+*🎥 Movie Download:* movie  MovieName
 └────────────────
 
 ┏━━━━━━━━━━━━━━━
 *🔎 SEARCH-CMD 🔍*
 ┡────────────────
-*📚 Search Info:* `search [term]`
-*🖼️ Image Search:* `image [query]`
-*🎬 Video Search:* `video [query]`
+*📚 Search Info:* search [term]
+*🖼️ Image Search:* image [query]
+*🎬 Video Search:* video [query]
 └────────────────
 
 ┏━━━━━━━━━━━━━━━
 *🧠 AI-CMD 🧠*
 ┡────────────────
-*🤖 Chat with AI:* `chat`
-*💡 Ask AI Anything:* `ask [question]`
+*🤖 Chat with AI:* chat
+*💡 Ask AI Anything:* ask [question]
 └────────────────
 
 ┏━━━━━━━━━━━━━━━
 *👨‍💻 OWNER-CMD 👨‍💻*
 ┡────────────────
-*⚙️ Bot Info:* `.info`
-*🔧 Settings:* `.settings`
+*⚙️ Bot Info:* info
+*🔧 Settings:* settings
 └────────────────
 
 ┏━━━━━━━━━━━━━━━
 *👥 GROUP-CMD 👥*
 ┡────────────────
-*👤 Group Info:* `.groupinfo`
-*🎤 Manage Group:* `.group [add/remove]`
+*👤 Group Info:* .groupinfo
+*🎤 Manage Group:* .group [add/remove]
 └────────────────
 
 ┏━━━━━━━━━━━━━━━
 *📃 INFO-CMD 📃*
 ┡────────────────
-*🧑‍💻 Developer Info:* `.devinfo`
-*ℹ️ Bot Info:* `.botinfo`
+*🧑‍💻 Developer Info:* .devinfo
+*ℹ️ Bot Info:* .botinfo
 └────────────────
 
 *╭─────────*
