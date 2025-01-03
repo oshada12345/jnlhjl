@@ -12,4 +12,7 @@ module.exports = {
     MONGODB:
         process.env.MONGODB ||
         "",
+    ALIVE_IMG:
+         process.env.ALIVE_IMG  ||
+        "https://ibb.co/VBPD8J0",
 };
