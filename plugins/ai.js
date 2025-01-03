@@ -17,7 +17,7 @@ async (conn, mek, m, { q, reply }) => {
         }
 
         // Fetch the AI response
-        let response = await fetchJson(`https://chatgptforprabath-md.vercel.app/api/gptv1?q=${encodeURIComponent(q)}`);
+        let response = await fetchJson(`https://www.dark-yasiya-api.site/ai/chatgpt?q${encodeURIComponent(q)}`);
 
         // Ensure data exists in the response
         if (response && response.data) {
