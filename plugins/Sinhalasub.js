@@ -1,7 +1,17 @@
 // This plugin was created by David Cyril 
 
 // Don't Edit Or share without given me credits 
-const { Config } = require("../lib");
+const {
+  smd,
+  fetchJson,
+  astroJson,
+  fancytext,
+  yt,
+  getBuffer,
+  smdBuffer,
+  prefix,
+  Config,
+} = require("../lib/functions");
 const { sinhalaSub } = require("mrnima-moviedl");
 const axios = require("axios");
 
