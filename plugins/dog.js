@@ -129,7 +129,10 @@ cmd(
             reply("🚩 *Error !!*");
         }
     },
-);
+);                const cmd = require("cmd-handler"); // Replace with your command handler import
+const axios = require("axios");
+const FileType = require("file-type");
+
 cmd(
     {
         pattern: "fit",
@@ -154,7 +157,7 @@ cmd(
                     url,
                     method: "GET",
                     responseType: "arraybuffer",
-                    timeout: 60000,
+                    timeout: 120000, // 2 minutes timeout
                     maxRedirects: 5,
                     headers: {
                         'User-Agent': 'Mozilla/5.0',
@@ -169,19 +172,25 @@ cmd(
 
         try {
             const mediaBuffer = await downloadFile(mediaUrl);
+
+            if (!mediaBuffer || mediaBuffer.length === 0) {
+                return await reply("*Unable to download the file. Please verify the URL and try again!*");
+            }
+
             const fileSizeInMB = (mediaBuffer.length / (1024 * 1024)).toFixed(2);
 
             if (fileSizeInMB > 2000) {
                 return await reply("*File exceeds the 2GB limit!*");
             }
 
-            // Detect file type and extension
-            const FileType = require("file-type");
             const fileType = await FileType.fromBuffer(mediaBuffer);
-            const detectedExtension = fileType?.ext || "bin";
-            const detectedMimeType = fileType?.mime || "application/octet-stream";
 
-            // Build the final filename
+            if (!fileType) {
+                return await reply("*Unable to detect file type. Please verify the URL or try another file!*");
+            }
+
+            const detectedExtension = fileType.ext;
+            const detectedMimeType = fileType.mime;
             const finalFileName = `${fileName || "Downloaded_File"}.${detectedExtension}`;
 
             const message = {
@@ -190,73 +199,25 @@ cmd(
                 caption: `🎬 *${fileName || "File"}*\n\n*File Size:* ${fileSizeInMB} MB\n\n_Provided by DARK SHUTER_ 🎬`,
             };
 
-            // Decide whether to send as a document or video
             if (detectedMimeType.startsWith("video/")) {
                 message.video = mediaBuffer; // Send as video
             } else {
                 message.document = mediaBuffer; // Send as document
             }
 
-            // Send the file
             await conn.sendMessage(from, message, { quoted: mek });
 
-            // Send success reaction
             await conn.sendMessage(from, {
                 react: { text: "✔️", key: mek.key },
             });
         } catch (error) {
-            console.error("Error downloading or sending file:", error.message);
+            console.error("Error downloading or sending file:", error);
 
-            if (error.message.includes("403")) {
+            if (error.response && error.response.status === 403) {
                 await reply("*Error: Access Forbidden (403). Please check the URL or try another source.*");
             } else {
                 await reply("*An error occurred while processing the file. Please try again!*");
             }
         }
     }
-);
-
-
-cmd(
-    {
-        pattern: "down",
-        react: "📥",
-        dontAddCommandList: true,
-        filename: __filename,
-    },
-    async (conn, mek, m, { from, q, reply }) => {
-        try {
-            if (!q ) {
-                return await reply(
-                    '*Please provide a valid direct URL with "±".*',
-                );
-            }
-
-            const [data, datas] = q.split("±");
-
-            const response = await axios.get(data.trim(), {
-                responseType: "arraybuffer",
-            });
-            const mediaBuffer = Buffer.from(response.data, "binary");
-
-            const message = {
-                document: mediaBuffer,
-                caption: `\n\n*Darksadas YT*`,
-                mimetype: "video/mp4",
-                fileName: `DARK SHUTER🎬.mp4`,
-            };
-
-            await conn.sendMessage(config.JID, message);
-            await conn.sendMessage(from, {
-                text: "✔️ *Movie sent successfully!*",
-            });
-        } catch (error) {
-            console.error("Error fetching or sending", error);
-            await conn.sendMessage(
-                from,
-                { text: "*Error fetching or sending!*" },
-                { quoted: mek },
-            );
-        }
-    },
 );
