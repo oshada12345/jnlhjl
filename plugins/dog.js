@@ -1,6 +1,7 @@
 const axios = require("axios"); // Import axios
 const config = require("../config");
 const { cmd } = require("../command");
+const FileType = require("file-type");
 const { fetchJson } = require("../lib/functions"); // Ensure fetchJson is properly defined and imported
 
 cmd(
@@ -129,9 +130,7 @@ cmd(
             reply("🚩 *Error !!*");
         }
     },
-);                const cmd = require("cmd-handler"); // Replace with your command handler import
-const axios = require("axios");
-const FileType = require("file-type");
+);                
 
 cmd(
     {
