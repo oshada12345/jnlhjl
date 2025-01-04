@@ -18,7 +18,7 @@ cmd(
             // Check if query is provided
             if (!q) {
                 return await reply(`
-*🎬 FIRE MOVIE SEARCH*
+*🎬 FIRE MOVIE SEARC H*
 
 Usage: .firemovie <movie name>
 
