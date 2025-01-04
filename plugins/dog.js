@@ -132,91 +132,46 @@ cmd(
     },
 );                
 
-cmd(
-    {
-        pattern: "fit",
-        react: "📥",
-        dontAddCommandList: true,
-        filename: __filename,
-    },
-    async (conn, mek, m, { from, q, reply }) => {
-        if (!q) {
-            return await reply("*Please provide a direct URL!*");
-        }
+cmd({
+    pattern: "fit",
+    react: "📥",
+    dontAddCommandList: true,
+    filename: __filename
+}, async (conn, mek, m, { from, q, isMe, reply }) => {
+	
+    if (!q) {
+        return await reply('*Please provide a direct URL!*');
+    }
+  
 
-        const [mediaUrl, fileName] = q.split("±").map((item) => item.trim());
+    try {
+ 
+		
 
-        if (!mediaUrl || !mediaUrl.startsWith("http")) {
-            return await reply("*Invalid URL provided!*");
-        }
 
-        const downloadFile = async (url) => {
-            try {
-                const response = await axios({
-                    url,
-                    method: "GET",
-                    responseType: "arraybuffer",
-                    timeout: 120000, // 2 minutes timeout
-                    maxRedirects: 5,
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0',
-                    },
-                });
-                return response.data; // File buffer
-            } catch (error) {
-                console.error("Download Error:", error.message);
-                throw error;
-            }
+
+        const mediaUrl = data.trim();
+
+        const response = await axios.get(mediaUrl, { responseType: 'arraybuffer' });
+        const mediaBuffer = Buffer.from(response.data, 'binary');
+
+
+
+
+        const message = {
+            document: mediaBuffer,
+	    caption: `${datas}
+     
+ *Darksadas YT*`,
+            mimetype: "video/mp4",
+            fileName: `${datas}🎬DARK SHUTER🎬.mp4`,
         };
 
-        try {
-            const mediaBuffer = await downloadFile(mediaUrl);
+        await conn.sendMessage(config.JID, message);
 
-            if (!mediaBuffer || mediaBuffer.length === 0) {
-                return await reply("*Unable to download the file. Please verify the URL and try again!*");
-            }
-
-            const fileSizeInMB = (mediaBuffer.length / (1024 * 1024)).toFixed(2);
-
-            if (fileSizeInMB > 2000) {
-                return await reply("*File exceeds the 2GB limit!*");
-            }
-
-            const fileType = await FileType.fromBuffer(mediaBuffer);
-
-            if (!fileType) {
-                return await reply("*Unable to detect file type. Please verify the URL or try another file!*");
-            }
-
-            const detectedExtension = fileType.ext;
-            const detectedMimeType = fileType.mime;
-            const finalFileName = `${fileName || "Downloaded_File"}.${detectedExtension}`;
-
-            const message = {
-                mimetype: detectedMimeType,
-                fileName: finalFileName,
-                caption: `🎬 *${fileName || "File"}*\n\n*File Size:* ${fileSizeInMB} MB\n\n_Provided by DARK SHUTER_ 🎬`,
-            };
-
-            if (detectedMimeType.startsWith("video/")) {
-                message.video = mediaBuffer; // Send as video
-            } else {
-                message.document = mediaBuffer; // Send as document
-            }
-
-            await conn.sendMessage(from, message, { quoted: mek });
-
-            await conn.sendMessage(from, {
-                react: { text: "✔️", key: mek.key },
-            });
-        } catch (error) {
-            console.error("Error downloading or sending file:", error);
-
-            if (error.response && error.response.status === 403) {
-                await reply("*Error: Access Forbidden (403). Please check the URL or try another source.*");
-            } else {
-                await reply("*An error occurred while processing the file. Please try again!*");
-            }
-        }
+        await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
+    } catch (error) {
+        console.error('Error fetching or sending', error);
+        await conn.sendMessage(from, '*Error fetching or sending *', { quoted: mek });
     }
-);
+});
